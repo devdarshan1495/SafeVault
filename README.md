@@ -2,13 +2,12 @@
 
 A scalable, reliable, secure, and highly available backup and recovery platform designed to protect critical data across distributed enterprise environments. Features content-defined chunking, global deduplication, incremental backups, snapshot-based recovery, distributed replication, and event-driven architecture via Pub/Sub.
 
-**GitHub Repository:** https://github.com/<your-username>/SafeVault *(replace with actual URL)*
-
 ---
 
 ## Project Overview
 
 SafeVault solves the challenges of petabyte-scale backup management:
+
 - **Slow restores** → Solved by point-in-time snapshot recovery with version chain traversal
 - **Storage waste** → Solved by SHA-256 global deduplication with Bloom filter
 - **Failed backups** → Solved by checkpoint-based resume and retry with exponential backoff
@@ -20,6 +19,7 @@ SafeVault solves the challenges of petabyte-scale backup management:
 ## Setup Instructions
 
 ### Prerequisites
+
 - Python 3.12+
 - pip (Python package installer)
 
@@ -36,12 +36,12 @@ pip install -r requirements.txt
 
 ### Dependencies
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| zstandard | >=0.22.0 | Compression/decompression (zstd) |
-| cryptography | >=41.0.0 | AES-256-GCM encryption |
-| pytest | >=7.4.0 | Unit testing framework |
-| pytest-asyncio | >=0.23.0 | Async test support |
+| Package        | Version  | Purpose                          |
+| -------------- | -------- | -------------------------------- |
+| zstandard      | >=0.22.0 | Compression/decompression (zstd) |
+| cryptography   | >=41.0.0 | AES-256-GCM encryption           |
+| pytest         | >=7.4.0  | Unit testing framework           |
+| pytest-asyncio | >=0.23.0 | Async test support               |
 
 ---
 
@@ -54,6 +54,7 @@ python3 -m src.main
 ```
 
 This executes 6 scenarios:
+
 1. **Full Backup** — Chunks, deduplicates, compresses, encrypts, and stores files
 2. **Incremental Backup** — Detects changed files via mtime/hash, backs up only new chunks
 3. **Restore** — Reconstructs files from the version chain with integrity verification
@@ -125,17 +126,17 @@ SafeVault/
 
 ## Key Features
 
-| Feature | Description |
-|---------|-------------|
-| **Content-Defined Chunking** | Rabin fingerprint-based variable-size chunking for optimal dedup |
-| **Global Deduplication** | SHA-256 hash index with Bloom filter for fast duplicate detection |
-| **Incremental Backups** | Tracks changed files via mtime/hash comparison |
-| **Snapshot Recovery** | Point-in-time restore via version chain traversal |
-| **Replication** | 3× replication (2 in-region, 1 cross-region) with quorum writes |
-| **Pub/Sub Event Bus** | Async event-driven architecture decoupling all components |
-| **Fault Tolerance** | Node failure handling, retry with backoff, checkpoint resume |
-| **Encryption** | AES-256-GCM per-chunk encryption |
-| **Monitoring** | Real-time metrics and critical alerts via Pub/Sub subscription |
+| Feature                            | Description                                                       |
+| ---------------------------------- | ----------------------------------------------------------------- |
+| **Content-Defined Chunking** | Rabin fingerprint-based variable-size chunking for optimal dedup  |
+| **Global Deduplication**     | SHA-256 hash index with Bloom filter for fast duplicate detection |
+| **Incremental Backups**      | Tracks changed files via mtime/hash comparison                    |
+| **Snapshot Recovery**        | Point-in-time restore via version chain traversal                 |
+| **Replication**              | 3× replication (2 in-region, 1 cross-region) with quorum writes  |
+| **Pub/Sub Event Bus**        | Async event-driven architecture decoupling all components         |
+| **Fault Tolerance**          | Node failure handling, retry with backoff, checkpoint resume      |
+| **Encryption**               | AES-256-GCM per-chunk encryption                                  |
+| **Monitoring**               | Real-time metrics and critical alerts via Pub/Sub subscription    |
 
 ---
 
@@ -145,7 +146,7 @@ SafeVault/
 
 The system uses an event-driven architecture with Pub/Sub at its core. All components communicate asynchronously through typed events, enabling loose coupling, resilience, and scalability.
 
-See [`docs/architecture.md`](./docs/architecture.md) for the full architectural diagram and component descriptions.  
+See [`docs/architecture.md`](./docs/architecture.md) for the full architectural diagram and component descriptions.
 For a complete feature guide with all CLI commands and API references, see [`docs/user_guide.md`](./docs/user_guide.md).
 
 ---
@@ -153,6 +154,7 @@ For a complete feature guide with all CLI commands and API references, see [`doc
 ## Additional Project Details
 
 ### Technology Stack
+
 - **Language:** Python 3.12
 - **Compression:** zstandard (zstd)
 - **Encryption:** AES-256-GCM (cryptography library)
@@ -162,6 +164,7 @@ For a complete feature guide with all CLI commands and API references, see [`doc
 - **Production reference:** PostgreSQL, Redis, Apache Kafka, Prometheus, Grafana
 
 ### Key Algorithms
+
 - **CDC:** Rabin fingerprint rolling hash with 48-byte window, ~8KB average chunk
 - **Dedup:** SHA-256 → Bloom filter → global hash index → reference counting
 - **Replication:** Quorum consensus (N/2+1) for writes, any-node for reads
@@ -169,6 +172,7 @@ For a complete feature guide with all CLI commands and API references, see [`doc
 - **Restore:** Version chain traversal (incremental → full), chunk reassembly by index
 
 ### Scalability Design
+
 - Storage nodes scale horizontally via consistent hashing
 - Metadata sharded by user_id in PostgreSQL
 - Dedup index partitioned by hash prefix
