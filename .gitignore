@@ -1,0 +1,14 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.env
+.venv/
+
+# Build scripts (not part of source)
+docs/generate_diagram.py
+docs/generate_pdf.py

@@ -1,0 +1,167 @@
+digraph SafeVault {
+    rankdir=TB;
+    splines=ortho;
+    compound=true;
+    nodesep=0.4;
+    ranksep=0.5;
+    fontname="Arial";
+    fontsize=16;
+    bgcolor="white";
+    dpi=200;
+    label="SafeVault -- Enterprise Backup & Restore Architecture";
+    labelloc=t;
+    labeljust=l;
+
+    node [fontname="Arial", fontsize=10, shape=box, style=filled, fillcolor="#E8F0FE", penwidth=1.5, color="#1A73E8"];
+    edge [fontname="Arial", fontsize=8, color="#5F6368", penwidth=1.2];
+
+    // ========== NODES ==========
+    // Client
+    clients [label="CLI / SDK / API", shape=box, fillcolor="#FFF3E0", color="#FB8C00", fontsize=11];
+
+    // API Gateway
+    api_gw [label="API Gateway\nAuth / Rate Limit", fillcolor="#E8F5E9", color="#43A047"];
+
+    // Orchestration
+    scheduler [label="Backup\nScheduler", fillcolor="#E3F2FD", color="#1E88E5"];
+    backup_eng [label="Backup\nEngine", fillcolor="#E3F2FD", color="#1E88E5"];
+    restore_eng [label="Restore\nEngine", fillcolor="#E3F2FD", color="#1E88E5"];
+    metadata_svc [label="Metadata\nService", fillcolor="#E3F2FD", color="#1E88E5"];
+
+    // Pub/Sub
+    pubsub [label="Event Bus (Pub/Sub)\nbackup.jobs.* / restore.jobs.*\nreplication.* / monitoring.*", shape=box, fillcolor="#F3E5F5", color="#8E24AA", fontsize=9];
+
+    // Pipeline
+    chunker [label="Chunker\nCDC / Rabin", fillcolor="#FFF8E1", color="#F57F17"];
+    dedup [label="Dedup Engine\nSHA-256 + Bloom", fillcolor="#FFF8E1", color="#F57F17"];
+    compressor [label="Compressor\nZstandard", fillcolor="#FFF8E1", color="#F57F17"];
+    encryptor [label="Encryptor\nAES-256-GCM", fillcolor="#FFF8E1", color="#F57F17"];
+
+    // DB
+    metadata_db [label="PostgreSQL\nMetadata Store", shape=cylinder, fillcolor="#E0F2F1", color="#00796B"];
+    redis_cache [label="Redis\nCache / Queues", shape=cylinder, fillcolor="#E0F2F1", color="#00796B"];
+
+    // Storage nodes
+    node_a [label="Node A\nus-east-1a", shape=folder, fillcolor="#FFEBEE", color="#C62828"];
+    node_b [label="Node B\nus-east-1b", shape=folder, fillcolor="#FFEBEE", color="#C62828"];
+    node_c [label="Node C\neu-west-1a", shape=folder, fillcolor="#FFEBEE", color="#C62828"];
+
+    // Monitoring
+    prom [label="Prometheus\nMetrics", fillcolor="#ECEFF1", color="#546E7A"];
+    grafana [label="Grafana\nDashboard", fillcolor="#ECEFF1", color="#546E7A"];
+
+    // ========== SUBCLUSTERS ==========
+    subgraph cluster_api {
+        label="API Gateway Layer";
+        style=rounded;
+        color="#909090";
+        fontsize=12;
+        fontcolor="#555";
+        api_gw;
+    }
+
+    subgraph cluster_orch {
+        label="Orchestration Layer";
+        style=rounded;
+        color="#909090";
+        fontsize=12;
+        fontcolor="#555";
+        { rank=same; scheduler; backup_eng; restore_eng; metadata_svc; }
+    }
+
+    subgraph cluster_pubsub {
+        label="Event Bus";
+        style=rounded;
+        color="#909090";
+        fontsize=12;
+        fontcolor="#555";
+        pubsub;
+    }
+
+    subgraph cluster_pipeline {
+        label="Processing Pipeline";
+        style=rounded;
+        color="#909090";
+        fontsize=12;
+        fontcolor="#555";
+        { rank=same; chunker; dedup; compressor; encryptor; }
+    }
+
+    subgraph cluster_storage {
+        label="Storage Layer";
+        style=rounded;
+        color="#909090";
+        fontsize=12;
+        fontcolor="#555";
+
+        subgraph cluster_db {
+            label="Metadata Stores";
+            style=rounded;
+            color="#B0B0B0";
+            fontsize=10;
+            fontcolor="#777";
+            { rank=same; metadata_db; redis_cache; }
+        }
+
+        subgraph cluster_nodes {
+            label="Storage Cluster (3× Replication)";
+            style=rounded;
+            color="#B0B0B0";
+            fontsize=10;
+            fontcolor="#777";
+            { rank=same; node_a; node_b; node_c; }
+        }
+    }
+
+    subgraph cluster_mon {
+        label="Monitoring & Observability";
+        style=rounded;
+        color="#909090";
+        fontsize=12;
+        fontcolor="#555";
+        { rank=same; prom; grafana; }
+    }
+
+    // ========== EDGES ==========
+    clients -> api_gw [label=" REST/gRPC ", style=bold, color="#FB8C00"];
+
+    api_gw -> scheduler [label=" route "];
+    api_gw -> backup_eng [label=" route "];
+    api_gw -> restore_eng [label=" route "];
+    api_gw -> metadata_svc [label=" route "];
+
+    scheduler -> pubsub [label=" backup.due "];
+    backup_eng -> pubsub [label=" events "];
+    restore_eng -> pubsub [label=" events "];
+
+    pubsub -> backup_eng [label=" consume "];
+    pubsub -> restore_eng [label=" consume "];
+    pubsub -> prom [label=" events "];
+
+    backup_eng -> chunker [label=" process "];
+    chunker -> dedup [label=" hash "];
+    dedup -> compressor [label=" new chunks "];
+    compressor -> encryptor [label=" compress "];
+
+    encryptor -> node_a [label=" quorum write "];
+    encryptor -> node_b [label=" quorum write "];
+    encryptor -> node_c [label=" quorum write "];
+
+    backup_eng -> metadata_db [label=" index "];
+    backup_eng -> redis_cache [label=" cache "];
+    restore_eng -> metadata_db [label=" query "];
+
+    // Single clean edge to storage cluster
+    restore_eng -> node_a [label=" quorum read ", style=dashed, color="#1A73E8"];
+    restore_eng -> node_b [label=" quorum read ", style=dashed, color="#1A73E8"];
+
+    prom -> grafana [label=" alerts "];
+
+    // Replication edges (dashed, between storage nodes)
+    node_a -> node_b [label=" async repl. ", style=dotted, color="#C62828", constraint=false];
+    node_a -> node_c [label=" async repl. ", style=dotted, color="#C62828", constraint=false];
+
+    // ========== RANKING (layout control) ==========
+    { rank=same; clients; }
+    { rank=same; scheduler; backup_eng; restore_eng; metadata_svc; }
+}
