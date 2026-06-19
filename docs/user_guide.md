@@ -76,6 +76,22 @@ DEMO 1: Full Backup
 
 ## 2. Configuration Reference
 
+# A. Run ALL 6 demos (full backup → incremental → restore → monitoring → dedup → fault tolerance)
+
+python3 -m src.main
+
+# B. Run specific test files
+
+python3 -m pytest tests/test_chunking.py -v     # Chunking only
+python3 -m pytest tests/test_dedup.py -v        # Dedup only
+python3 -m pytest tests/test_compression.py -v  # Compression only
+python3 -m pytest tests/test_encryption.py -v   # Encryption only
+python3 -m pytest tests/test_backup.py -v       # Backup + restore pipeline
+python3 -m pytest tests/test_metadata.py -v     # Metadata store
+python3 -m pytest tests/test_pubsub.py -v       # Pub/Sub event bus
+python3 -m pytest tests/test_scheduler.py -v    # Scheduler
+python3 -m pytest tests/test_storage.py -v      # Storage nodes + cluster
+
 ### Storage Cluster Configuration
 
 The storage cluster is configured with 6 nodes across 3 regions:
